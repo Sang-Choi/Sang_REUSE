@@ -1,0 +1,8 @@
+{
+  "mode": "fsp",                    // should be either "fsp" or "eofm"
+  "sys": "robustness/Project2.lts",      // the path to the system model specification
+  "env": "robustness/IdealOperatorModel.lts",  // the path to the environment model specification
+  "prop": "robustness/PropertyP.lts",       // the path to the property model specification
+  "deviation": "robustness/DeviationOperatorModel.lts" // the path to the deviation model specification.
+                                              // In the "eofm" mode, the deviation model is not required.
+}

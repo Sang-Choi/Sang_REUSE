@@ -72,6 +72,14 @@ const BatterySecondary = 11
 
 range BatteryStateT = BatteryPrimary..BatterySecondary
 
+//==============================
+//  DRUG INJECTION RATE RANGE
+//==============================
+
+const N = 10
+
+range R = 0..N
+
 //===================
 // SAFETY PROPERTIES
 //===================
@@ -108,11 +116,15 @@ property CHANGE_SETTINGS =
 
 //IF ALARM RINGS MORE THAN THREE TIMES AND IS NOT ADDRESS, PATIENT RECEIVES CRITICAL OVERDOSE
 
-//property THREE_RINGS = 
-//(
-//	sound_alarm -> sound_alarm -> sound_alarm -> STOP
-//).
+property THREE_RINGS = 
+(
+	sound_alarm -> sound_alarm -> sound_alarm -> STOP
+).
 
+property DANGEROUS_DOSAGE = 
+(
+	when(rate>5)confirm_safe_rate->STOP
+).
 //=====================
 // LIVENESS PROPERTIES
 //=====================
@@ -138,7 +150,7 @@ PUMP = POWER_OFF,
 
 POWER_OFF = 
 (
-    turn_on -> SETUP[ParamsNotSet][LineUnlocked][Unplugged]
+    turn_on -> SETUP[ParamsNotSet][LineUnlocked][Unplugged][0]
 ),
 
 //
@@ -147,33 +159,37 @@ POWER_OFF =
 //   physical connections can be made and line can be locked
 //
 
-SETUP[params:ParamsStateT][lineLock:LineLockStateT][plug:PlugStateT] = 
+SETUP[params:ParamsStateT][lineLock:LineLockStateT][plug:PlugStateT][rate:R] = 
 (
     turn_off -> POWER_OFF
     |
 	when(plug == Unplugged)
-   		plug -> sound_plugged -> SETUP[params][lineLock][Plugged]
+   		plug -> sound_plugged -> SETUP[params][lineLock][Plugged][rate]
     |
 	when(plug == Plugged)
-		unplug -> sound_unplugged_alarm -> BATTERY_SETUP[BatteryPrimary][params][lineLock]
+		unplug -> sound_unplugged_alarm -> BATTERY_SETUP[BatteryPrimary][params][lineLock][rate]
 	|
     when (params == ParamsNotSet && lineLock == LineUnlocked)
-        set_rate -> enter_value ->
-            (press_set -> SETUP[ParamsSet][lineLock][plug]
-             |
-             press_cancel -> SETUP[ParamsNotSet][lineLock][plug])
+        set_rate ->
+	(
+		when(rate>5) confirm_safe_rate -> (press_set -> SETUP[ParamsSet][lineLock][plug][rate] | press_cancel -> SETUP[ParamsNotSet][lineLock][plug][0])
+		|
+		when(0<rate<6) press_set -> SETUP[ParamsSet][lineLock][plug][rate] | press_cancel -> SETUP[ParamsNotSet][lineLock][plug][0]
+		|
+		when(rate <1) sound_no_flow_alarm -> SETUP[ParamsNotSet][lineLock][plug][0]
+	)
     |
     when (params == ParamsSet && lineLock == LineUnlocked)
-        clear_rate -> SETUP[ParamsNotSet][LineUnlocked][plug]
+        clear_rate -> SETUP[ParamsNotSet][LineUnlocked][plug][rate]
     |
     when (params == ParamsSet && lineLock == LineUnlocked)
-        connect_set -> purge_air -> lock_line -> SETUP[params][LineLocked][plug]
+        connect_set -> purge_air -> lock_line -> SETUP[params][LineLocked][plug][rate]
     |
     when (lineLock == LineLocked)
         confirm_settings -> INFUSION[UnitUnlocked][plug]
     |
     when (lineLock == LineLocked)
-        erase_and_unlock_line -> SETUP[params][LineUnlocked][plug]
+        erase_and_unlock_line -> SETUP[params][LineUnlocked][plug][0]
 ),
 
 //
@@ -193,7 +209,7 @@ INFUSION[unitLock:UnitLockStateT][plug:PlugStateT] =
 		unplug->sound_unplugged_alarm->BATTERY_INFUSION[BatteryPrimary][unitLock]
 	|
     when (unitLock == UnitUnlocked)
-        change_settings -> SETUP[ParamsSet][LineLocked][Unplugged]
+        change_settings -> SETUP[ParamsSet][LineLocked][Unplugged][0]
     |
     when (unitLock == UnitUnlocked)
         lock_unit -> INFUSION[UnitLocked][plug]
@@ -262,19 +278,19 @@ INFUSION_BLOCKED_BATTERY[unitLock:UnitLockStateT][alarm:AlarmStateT][plug:PlugSt
 //Battery failure for SETUP
 //
 
-BATTERY_SETUP[batteryState:BatteryStateT][params:ParamsStateT][lineLock:LineLockStateT] = 
+BATTERY_SETUP[batteryState:BatteryStateT][params:ParamsStateT][lineLock:LineLockStateT][rate:R] = 
 (
 	when (batteryState == BatteryPrimary)
-		primary_battery_failure_setup -> BATTERY_SETUP[BatterySecondary][params][lineLock]
+		primary_battery_failure_setup -> BATTERY_SETUP[BatterySecondary][params][lineLock][rate]
 	|
 	when(batteryState == BatterySecondary)
 		secondary_battery_failure_setup -> POWER_OFF
 	|
 	when (batteryState == BatteryPrimary)
-		sound_primary_alarm->SETUP[params][lineLock][Unplugged]
+		sound_primary_alarm->SETUP[params][lineLock][Unplugged][rate]
 	|
 	when(batteryState == BatterySecondary)
-		sound_secondary_alarm->SETUP[params][lineLock][Unplugged]
+		sound_secondary_alarm->SETUP[params][lineLock][Unplugged][rate]
 ),
 
 //
@@ -313,12 +329,12 @@ IDEAL_OPERATOR_ALARM_PLUGGED[unitLock:UnitLockStateT][plug:PlugStateT] =
 //	sound_alarm -> INFUSION_BLOCKED[unitLock][AlarmActivated][plug]
 //).
 
-
+//SILENCE_ALARM_TASK = (sound_alarm -> silence_alarm -> SILENCE_ALARM_TASK).
+//property P = (sound_alarm -> (silence_alarm -> P | sound_alarm -> (silence_alarm -> P)) | silence_alarm -> P).
+//||SYS = (PUMP).
 
 
 ||SYS = (PUMP).
-
-
 
 
 

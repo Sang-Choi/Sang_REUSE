@@ -1,0 +1,110 @@
+
+//This is the modelling for DelayedCompletion.
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+//======================
+// Constants and Ranges
+//======================
+
+//
+// States of the pump alarm
+//
+const AlarmActivated = 0    // Alarm currently active
+const AlarmSilenced  = 1    // Alarm currently inactive
+
+range AlarmStateT = AlarmActivated .. AlarmSilenced
+
+//
+// States of the pump settings
+//
+const ParamsNotSet = 2    // pump parameters not set yet
+const ParamsSet    = 3    // pump parameters already set
+
+range ParamsStateT = ParamsNotSet .. ParamsSet
+
+//==============================
+//  DRUG INJECTION RATE RANGE
+//==============================
+
+const High = 3
+const Med = 2
+const Low = 1
+const Off = 0
+
+range Range = Off..High
+
+
+
+PUMP = POWER_OFF,
+
+POWER_OFF = 
+(
+    turn_on -> SETUP[ParamsNotSet][Off][Off]
+),
+
+SETUP[params:ParamsStateT][rate:Range][capacity:Range] = 
+(
+    turn_off -> POWER_OFF
+    |
+    when (params == ParamsNotSet)
+        setting_rate -> (set_rate_low ->SETUP[ParamsNotSet][Low][capacity] | set_rate_med ->SETUP[ParamsNotSet][Med][capacity] | set_rate_high ->SETUP[ParamsNotSet][High][capacity])
+	|
+	when(rate==High) 
+		confirm_rate_high -> (confirm -> SETUP[ParamsSet][rate][capacity] | press_cancel -> SETUP[ParamsNotSet][Off][capacity])
+	|
+	when(rate == Med || rate == Low) 
+		confirm_rate -> SETUP[ParamsSet][rate][capacity] | press_cancel -> SETUP[ParamsNotSet][Off][capacity]
+    |
+    when (params == ParamsSet)
+        clear_rate -> SETUP[ParamsNotSet][Off][capacity]
+    |
+    when (params == ParamsSet)
+        confirm_settings -> (set_capacity_low -> INFUSION[rate][Low] | set_capacity_med -> INFUSION[rate][Med] | set_capacity_high -> INFUSION[rate][High] )
+),
+
+INFUSION[rate:Range][capacity:Range] =
+(
+    turn_off -> POWER_OFF
+    |
+    change_settings -> SETUP[ParamsSet][Off][Off]
+    |
+	when(capacity >Off && capacity - rate > 0)
+    	dispense_main_med_flow -> INFUSION[rate][capacity - rate]
+    |
+	when(capacity > Off && capacity - rate <= 0)
+		dispense_main_med_flow -> INFUSION[rate][Off] //Delayed Completion implemented here
+	|
+	when(capacity == Off)
+		completion_state->COMPLETE[AlarmActivated]
+),
+
+COMPLETE[alarm:AlarmStateT] = 
+(
+	when(alarm == AlarmActivated)
+    sound_alarm -> COMPLETE[AlarmActivated] | silence_alarm -> SETUP[ParamsNotSet][Off][Off]
+).
+
+
+
+
+
+
+
+
+
+
+
+
+
+

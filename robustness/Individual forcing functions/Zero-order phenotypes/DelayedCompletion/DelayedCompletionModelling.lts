@@ -1,0 +1,139 @@
+
+//This is the modelling for DelayedCompletion.
+//
+
+
+//======================
+// Constants and Ranges
+//======================
+
+//
+// States of the pump alarm
+//
+const AlarmActivated = 0    // Alarm currently active
+const AlarmSilenced  = 1    // Alarm currently inactive
+
+range AlarmStateT = AlarmActivated .. AlarmSilenced
+
+//
+// States of the pump settings
+//
+const ParamsNotSet = 2    // pump parameters not set yet
+const ParamsSet    = 3    // pump parameters already set
+
+range ParamsStateT = ParamsNotSet .. ParamsSet
+
+//==============================
+//  DRUG INJECTION RATE RANGE
+//==============================
+
+const High = 3
+const Med = 2
+const Low = 1
+const Off = 0
+
+range Range = Off..High
+
+const Rat = 1
+const Cap = 3
+
+//=====================
+//  Safety Properties
+//=====================
+
+property DISPENSE = 
+(
+	dispense_main_med_flow -> dispense_main_med_flow -> dispense_main_med_flow -> dispense_main_med_flow ->ERROR
+).
+
+//=================
+//  System Design
+//=================
+
+PUMP = POWER_OFF,
+
+POWER_OFF = 
+(
+    turn_on -> SETUP[ParamsNotSet][Off][Off]
+),
+
+SETUP[params:ParamsStateT][rate:Range][capacity:Range] = 
+(
+    when (params == ParamsNotSet)
+        setting_rate -> (set_rate_low ->SETUP[ParamsNotSet][Low][capacity] | set_rate_med ->SETUP[ParamsNotSet][Med][capacity] | set_rate_high ->SETUP[ParamsNotSet][High][capacity])
+	|
+	when(rate==High) 
+		confirm_rate_high -> (confirm -> SETUP[ParamsSet][rate][capacity] | press_cancel -> SETUP[ParamsNotSet][Off][capacity])
+	|
+	when(rate == Med || rate == Low) 
+		confirm_rate -> SETUP[ParamsSet][rate][capacity] | press_cancel -> SETUP[ParamsNotSet][Off][capacity]
+    |
+    when (params == ParamsSet)
+        clear_rate -> SETUP[ParamsNotSet][Off][capacity]
+    |
+    when (params == ParamsSet)
+        confirm_settings -> set_capacity-> (set_capacity_low -> INFUSION | set_capacity_med -> INFUSION | set_capacity_high -> INFUSION )
+),
+
+INFUSION =
+(
+	dispense_main_med_flow -> INFUSION//Delayed Completion implemented here
+	|
+	completion_state -> COMPLETE[AlarmActivated]
+),
+
+COMPLETE[alarm:AlarmStateT] = 
+(
+	when(alarm == AlarmActivated)
+    sound_alarm -> COMPLETE[AlarmActivated] | silence_alarm -> SETUP[ParamsNotSet][Off][Off]
+).
+
+//User model
+
+USER = USER_MODEL,
+USER_MODEL = (turn_on -> setting_rate ->set_capacity->dispense_main_med_flow ->INFUSE),
+
+INFUSE = (dispense_main_med_flow ->INFUSE).
+
+CONFIRM_PATH = P[Cap],
+P[c:0..3] = 
+(
+	when(c == 0)
+		completion_state -> P[0]
+	|
+	when (c > 0)
+		dispense_main_med_flow -> P[c - Rat]
+).
+
+
+
+||SYS = (PUMP||USER||DISPENSE||CONFIRM_PATH).
+
+//Compose user model to pump first. Compare to safety property, show how user can violate safety property.
+
+//Look at CJ's paper pg2 for example, user model is shown there.
+
+//Compose patch with user & pump, and reverify the same property. The patch SHOULD prevent violation.
+
+//Add safety properties
+
+//End of August deadline for submission of paper
+//It takes a month to write a good paper
+
+//For submission, we need a much wider range of models
+//Formal theory of patching
+//Evaluation/demonstration of claims. We need to prove that we are adding value.
+
+//ASC
+//ICSE
+//FSE
+
+
+
+
+
+
+
+
+
+

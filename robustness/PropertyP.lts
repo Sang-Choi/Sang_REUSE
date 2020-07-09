@@ -1,0 +1,1 @@
+property P = (sound_alarm -> (press_silence -> P | sound_alarm -> press_silence -> P)).

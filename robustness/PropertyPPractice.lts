@@ -1,0 +1,2 @@
+property P = 
+(silence_alarm -> P |sound_alarm -> (silence_alarm -> P|sound_alarm -> silence_alarm -> P)).

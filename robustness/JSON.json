@@ -1,0 +1,8 @@
+{
+  "mode": "fsp",
+  "sys": "Project2.lts",
+  "env": "IdealOperatorModel.lts",
+  "prop": "PropertyP.lts",
+  "deviation": "DeviationOperatorModel.lts"
+                                            
+}

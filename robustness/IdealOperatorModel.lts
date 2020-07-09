@@ -1,0 +1,4 @@
+//This text file is for modelling ideal operator behavior.
+SILENCE_ALARM_TASK = (sound_alarm -> silence_alarm-> SILENCE_ALARM_TASK).
+
+||ENV = (SILENCE_ALARM_TASK).

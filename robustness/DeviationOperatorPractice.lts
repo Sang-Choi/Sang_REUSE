@@ -1,0 +1,9 @@
+menu ERR_ACTS= {ignore}
+
+SILENCE_ALARM_TASK = 
+(sound_alarm -> (ignore -> IGNORE|silence_alarm -> SILENCE_ALARM_TASK)),
+
+IGNORE = 
+(sound_alarm -> IGNORE|silence_alarm -> SILENCE_ALARM_TASK).
+
+||ENV = (SILENCE_ALARM_TASK).

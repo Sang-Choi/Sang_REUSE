@@ -1,0 +1,70 @@
+/*
+This is the Premature Start phenotype model.
+This error leads to people starting an action before EST (Earliest starting time)
+*/
+
+/*
+property SKIPPED = 
+(
+	turn_on->setting_rate->setting_capacity->connect_set->confirm_settings->SKIPPED
+).
+*/
+
+PUMP = POWER_OFF,
+
+POWER_OFF = 
+(
+    turn_on -> SETUP
+),
+
+SETUP = 
+(
+	setting_rate -> (set_rate_low->SETUP | set_rate_med ->SETUP | set_rate_high-> confirm_capacity_high ->SETUP)
+	|
+	setting_capacity -> (set_capacity_low->SETUP| set_capacity_med ->SETUP| set_capacity_high -> confirm_capacity_high ->SETUP)
+    |
+   	lock_line -> SETUP
+    |
+    confirm_settings -> INFUSION
+),
+
+INFUSION =
+(
+    dispense_main_med_flow -> INFUSION
+).
+
+//User model
+
+USER = 
+(
+	turn_on->confirm_settings -> USER
+).
+
+//Patch
+
+CONFIRM_PATH = P[0][0][0],
+
+P[rate:0..1][capacity:0..1][lock:0..1] = 
+(
+	when(rate == 0)
+		setting_rate->P[1][capacity][0]
+	|
+	when(capacity == 0)
+		setting_capacity->P[rate][1][0]
+	|
+	when(lock == 0 && capacity == 1 && rate == 1)
+		lock_line -> P[1][1][1]
+	|
+	when(lock == 1 && capacity == 1 && rate == 1)
+		confirm_settings -> P[1][1][1]
+).
+
+
+
+
+
+
+
+
+
+

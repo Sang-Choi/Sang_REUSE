@@ -71,6 +71,7 @@ pred startInfusing(p, p': Pump){
   p.cap = p'.cap
   p.rate = p'.rate
   p.plug = p'.plug
+  p.lock = p'.lock
   p.infuseState = NotInfusing
   p'.infuseState = Infusing
 }
@@ -94,7 +95,6 @@ pred infusionComplete(p, p': Pump){
 pred reset(p, p': Pump){
   p.infuseState = InfusionComplete
   initialState[p']
-  p.lock = p'.lock
 }
 
 pred initialState(p: Pump){
@@ -106,7 +106,12 @@ pred initialState(p: Pump){
 
 fact {
   initialState[first]
-  first.lock = Unlocked
+}
+
+pred setValuesComplete (p: Pump){
+	p.rate != NotSetR
+	p.cap != NotSetC
+	p.lock = Locked
 }
 
 fact {
@@ -121,5 +126,11 @@ fact {
      reset[p, p']
   }
 }
+
+assert setupComplete{ all p: Pump | p.infuseState != Infusing || setValuesComplete[p]  }
+assert infusionHasHappened{all p: Pump | p.infuseState != InfusionComplete || {some p': p.prevs | p'.infuseState = Infusing}}
+
+check setupComplete for 6
+check infusionHasHappened for 6
 
 run {last.infuseState=InfusionComplete} for 6 Pump

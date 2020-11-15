@@ -122,4 +122,4 @@ fact {
   }
 }
 
-run {last.infusionState=InfusionComplete} for 15 Pump
+run {last.infuseState=InfusionComplete} for 6 Pump

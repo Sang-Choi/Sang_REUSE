@@ -84,22 +84,31 @@ public final class Main {
                     // This can be useful for debugging.
                     //
                     // You can also write the outcome to an XML file
+                    ans.writeXML("alloy_example_output.xml");
+
+                    //
+                    // You can then visualize the XML file by calling this:
+                    if (viz == null) {
+                        viz = new VizGUI(false, "alloy_example_output.xml", null);
+                    } else {
+                        viz.loadXML("alloy_example_output.xml", true);
+                    }
+                    count++;
+                }
+                while (ans.next().satisfiable()){
+                    ans = ans.next();
+                    count++;
 //                    ans.writeXML("alloy_example_output.xml");
-//
-//                    //
+
+                    //
 //                    // You can then visualize the XML file by calling this:
 //                    if (viz == null) {
 //                        viz = new VizGUI(false, "alloy_example_output.xml", null);
 //                    } else {
 //                        viz.loadXML("alloy_example_output.xml", true);
 //                    }
-                    count++;
                 }
-                while (ans.next().satisfiable()){
-                    ans = ans.next();
-                    count++;
-                    System.out.println(count);
-                }
+                System.out.println(count);
             }
         }
     }

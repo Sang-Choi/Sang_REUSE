@@ -52,6 +52,7 @@ pred changeLock(p, p': Pump){
   p.cap != NotSetC
   p.cap = p'.cap
   p.lock != p'.lock
+  p.plug = p'.plug
   p.infuseState = NotInfusing
   p.infuseState = p'.infuseState
 }
@@ -89,6 +90,10 @@ pred stopInfusing(p, p': Pump){
 
 pred infusionComplete(p, p': Pump){
   p.infuseState = Infusing
+  p.cap = p'.cap
+  p.rate = p'.rate
+  p.plug = p'.plug
+  p.lock = p'.lock
   p'.infuseState = InfusionComplete
 }
 

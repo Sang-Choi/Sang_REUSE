@@ -39,9 +39,11 @@ pred connection(s,s': State){
      s.printState = s'.printState
      s.printState = NotPrinting
      s.printerOn = s'.printerOn
+     s.printerOn = Off
      s.connected != s'.connected
      s.documentOpen = s'.documentOpen
      s.printCount = NotSetP
+     s.documentOpen = NotOpen
      s.printCount = s'.printCount
      s.color = NotSetCol
      s.color = s'.color
@@ -55,6 +57,7 @@ pred power(s, s': State){
      s.printState = s'.printState
      s.printState = NotPrinting
      s.documentOpen = s'.documentOpen
+     s.documentOpen = NotOpen
      s.connected = s'.connected
      s.printerOn != s'.printerOn
      s.color = s'.color
@@ -99,6 +102,9 @@ pred setPrintSide(s, s': State){
     s.color = s'.color
     s.orientation = s'.orientation
     s.printCount = s'.printCount
+    s.color = NotSetCol
+    s.orientation = NotSetO
+    s.printCount = NotSetP
 }
 
 pred setOrientation(s, s': State){
@@ -110,6 +116,8 @@ pred setOrientation(s, s': State){
      s.orientation != s'.orientation
      s.printCount = s'.printCount
      s.printSide = s'.printSide
+     s.color = NotSetCol
+     s.printCount = NotSetP
 }
 
 
@@ -122,6 +130,7 @@ pred setColor(s, s': State){
      s.orientation = s'.orientation
      s.printCount = s'.printCount
      s.printSide = s'.printSide
+     s.printCount = NotSetP
 }
 
 pred setPrintCount(s, s': State){
